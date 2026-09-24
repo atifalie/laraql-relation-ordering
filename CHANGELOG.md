@@ -2,6 +2,35 @@
 
 All notable changes to `LaraQL` will be documented in this file.
 
+## v1.0.18 - 2026-09-24
+
+**Full Changelog**: https://github.com/nodesol/laraql/compare/v1.0.17...v1.0.18
+
+## Unreleased
+
+### Fixed
+
+* Restore the shared `OrderByClause` type. The `relations` argument that v1.0.17 added to the default `@orderBy` filter makes Lighthouse expose a generated clause type per field (`Query<Field>OrderByRelationOrderByClause`) instead of the shared `OrderByClause`, which renamed the `orderBy` argument type of every collection query of a model with relations.
+
+### Changed
+
+* `#[QueryCollection]` now offers every orderable relation on its own `orderBy<Relation>` argument (`orderByTenant` for a `tenant()` relation) instead of rewriting the default `orderBy` filter, so the `orderBy` argument of generated collections is byte for byte the one from v1.0.16 again. Relations that are `MorphTo`, whose columns are all hidden, or whose argument name collides with an earlier relation are left out. The extra arguments can be turned off with `order_by_relations: false`, which is also implied by removing `orderBy` from `filters`.
+
+## v1.0.17 - 2026-09-24
+
+### What's Changed
+
+* Fix documentation: avoid Model naming conflict with Eloquent by @Atif-Javeed in https://github.com/nodesol/laraql/pull/9
+* Bump actions/checkout from 6 to 7 by @dependabot[bot] in https://github.com/nodesol/laraql/pull/16
+* add orderby-relation by @atifalie in https://github.com/nodesol/laraql/pull/17
+
+### New Contributors
+
+* @Atif-Javeed made their first contribution in https://github.com/nodesol/laraql/pull/9
+* @atifalie made their first contribution in https://github.com/nodesol/laraql/pull/17
+
+**Full Changelog**: https://github.com/nodesol/laraql/compare/v1.0.16...v1.0.17
+
 ## v1.0.16 - 2026-09-17
 
 ### What's Changed

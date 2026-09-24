@@ -117,6 +117,38 @@ it('filters, orders and paginates the generated collection query', function () {
         ->and($response->json('data.publishedArticles.paginatorInfo.hasMorePages'))->toBeFalse();
 });
 
+it('orders a collection by a relation aggregate and by a plain column', function () {
+    $busy = Tag::query()->create(['name' => 'busy']);
+    $quiet = Tag::query()->create(['name' => 'quiet']);
+
+    $busy->articles()->attach(makeArticle(['title' => 'One']));
+    $busy->articles()->attach(makeArticle(['title' => 'Two']));
+    $quiet->articles()->attach(makeArticle(['title' => 'Three']));
+
+    $response = $this->graphQL(/** @lang GraphQL */ '
+        query {
+            tags(orderByArticles: [{ articles: { aggregate: COUNT }, order: DESC }]) {
+                data { name }
+            }
+        }
+    ');
+
+    $response->assertGraphQLErrorFree();
+
+    expect($response->json('data.tags.data.0.name'))->toBe('busy')
+        ->and($response->json('data.tags.data.1.name'))->toBe('quiet');
+
+    // The default orderBy argument keeps working untouched on the same field.
+    $this->graphQL(/** @lang GraphQL */ '
+        query {
+            tags(orderBy: [{ column: "name", order: DESC }]) {
+                data { name }
+            }
+        }
+    ')->assertGraphQLErrorFree()
+        ->assertJsonPath('data.tags.data.0.name', 'quiet');
+});
+
 it('resolves the renamed collection query with its extra filters', function () {
     makeArticle(['title' => 'Draft one', 'status' => 'draft']);
     makeArticle(['title' => 'Published one', 'status' => 'published']);

@@ -65,6 +65,30 @@ Same shape as `#[Query]`, with collection defaults: `name` = `Str::snake(Str::pl
 
 Because `@paginate` is applied, Lighthouse rewrites the field to return `<UnderlyingType>Paginator` (with `data` and `paginatorInfo`) and adds the `first` and `page` arguments itself.
 
+Every orderable relation of the model is added as its own argument, named after the relation, so the default `orderBy` argument keeps the shared `OrderByClause` type:
+
+```graphql
+users(
+    where: _ @whereConditions(column: {})
+    first: Int! = 10
+    page: Int
+    orderBy: _ @orderBy
+    orderByTenant: _ @orderBy(relations: [{ relation: "tenant", columns: ["id","name","created_at"] }])
+): [User!]!
+```
+
+`@orderBy` has no single `relation` argument, so the relation is passed through its `relations` list. Lighthouse answers that with a clause type generated per argument (here `QueryUsersOrderByTenantRelationOrderByClause`), which is why the relations are not folded into `orderBy`:
+
+```graphql
+{
+    users(orderByTenant: [{ tenant: { aggregate: MAX, column: NAME }, order: DESC }]) {
+        data { id }
+    }
+}
+```
+
+Relations that are not `BelongsTo`/`HasOne`/`HasMany`/`BelongsToMany` (such as `MorphTo`) are left out, as are relations whose related columns are all hidden (they get `{ relation: "tenant" }` without `columns`). When two relation methods map to the same argument name, e.g. `tenant()` and `tenant_case()`, the first one wins. Set `order_by_relations: false` to leave the arguments out, and removing `orderBy` from `filters` also drops them.
+
 ## `#[Mutation]`
 
 Constructor: `class`, `name` (required), `return_type` (default the class short name), `directives`, `inputs`, `query` (default `'@<name>'`), `authorize`.

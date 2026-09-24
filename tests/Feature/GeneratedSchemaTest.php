@@ -95,6 +95,24 @@ it('exposes the relation and input arguments added through attribute overrides',
         ->toContain('minViews: Int');
 });
 
+it('gives every orderable relation its own order by argument', function () {
+    $schema = printGeneratedSchema();
+
+    expect($schema)
+        // Every collection keeps the shared clause type on its default orderBy argument.
+        ->toContain('orderBy: [OrderByClause!]')
+        ->not->toContain('orderBy: [QueryPublishedArticlesOrderByRelationOrderByClause!]')
+        // Each relation is offered on its own argument instead.
+        ->toContain('orderByUser: [QueryPublishedArticlesOrderByUserRelationOrderByClause!]')
+        ->toContain('orderByComments: [QueryPublishedArticlesOrderByCommentsRelationOrderByClause!]')
+        ->toContain('orderByTags: [QueryPublishedArticlesOrderByTagsRelationOrderByClause!]')
+        ->toContain('orderByArticles: [QueryTagsOrderByArticlesRelationOrderByClause!]')
+        ->toContain('orderByArticle: [QueryCommentsOrderByArticleRelationOrderByClause!]')
+        ->toContain('input QueryCommentsOrderByArticleArticle {')
+        // MorphTo relations can not be ordered by.
+        ->not->toContain('orderByCommentable');
+});
+
 it('builds an executable schema', function () {
     $schema = app(SchemaBuilder::class)->schema();
 
