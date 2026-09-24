@@ -138,7 +138,6 @@ class QueryCollection implements Operation
 =======
         if (! $this->reflector->isSubclassOf(EloquentModel::class)) {
             return [];
->>>>>>> upstream/main
         }
 
         $model = new $this->class;
