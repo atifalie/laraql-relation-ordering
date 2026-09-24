@@ -73,22 +73,12 @@ class QueryCollection implements Operation
                 $this->filters_override ?? []
             );
 
-<<<<<<< HEAD
-            $filterDefinitions = array_map(
-                fn(string $filter): string =>
-                    trim($filter) === 'orderBy: _ @orderBy'
-                    ? $this->getOrderByFilter()
-                    : $filter,
-                $filterDefinitions
-            );
-=======
             if ($this->order_by_relations && $this->hasOrderByArgument($filterDefinitions)) {
                 $filterDefinitions = array_merge(
                     $filterDefinitions,
                     $this->getRelationOrderByArguments()
                 );
             }
->>>>>>> upstream/main
 
             $filters = implode(" \n ", $filterDefinitions);
             $filters = <<<ENDDATA
@@ -132,10 +122,6 @@ class QueryCollection implements Operation
      */
     private function getRelationOrderByArguments(): array
     {
-<<<<<<< HEAD
-        if (!$this->reflector->isSubclassOf(EloquentModel::class)) {
-            return 'orderBy: _ @orderBy';
-=======
         if (! $this->reflector->isSubclassOf(EloquentModel::class)) {
             return [];
         }
@@ -183,25 +169,6 @@ class QueryCollection implements Operation
 
             $columns = array_values(array_diff($columns, $related->getHidden()));
 
-<<<<<<< HEAD
-            $relationName = json_encode($name, JSON_THROW_ON_ERROR);
-            $fieldName = 'orderBy' . Str::studly($name);
-
-            if ($columns === []) {
-                $relations[] = "$fieldName: _ @orderBy(relations: [{ relation: $relationName }])";
-                continue;
-            }
-
-            $columnNames = json_encode($columns, JSON_THROW_ON_ERROR);
-            $relations[] = "$fieldName: _ @orderBy(relations: [{ relation: $relationName, columns: $columnNames }])";
-        }
-
-        if ($relations === []) {
-            return 'orderBy: _ @orderBy';
-        }
-
-        return implode(" \n ", array_merge(['orderBy: _ @orderBy'], $relations));
-=======
             $relationDefinition = '{ relation: '.json_encode($name, JSON_THROW_ON_ERROR);
 
             if ($columns !== []) {
@@ -214,6 +181,5 @@ class QueryCollection implements Operation
         }
 
         return $arguments;
->>>>>>> upstream/main
     }
 }
