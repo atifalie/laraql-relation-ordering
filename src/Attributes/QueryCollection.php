@@ -63,7 +63,8 @@ class QueryCollection implements Operation
             );
 
             $filterDefinitions = array_map(
-                fn (string $filter): string => trim($filter) === 'orderBy: _ @orderBy'
+                fn(string $filter): string =>
+                    trim($filter) === 'orderBy: _ @orderBy'
                     ? $this->getOrderByFilter()
                     : $filter,
                 $filterDefinitions
@@ -86,39 +87,31 @@ class QueryCollection implements Operation
 
     private function getOrderByFilter(): string
     {
-        if (! $this->reflector->isSubclassOf(EloquentModel::class)) {
+        if (!$this->reflector->isSubclassOf(EloquentModel::class)) {
             return 'orderBy: _ @orderBy';
         }
 
         $model = new $this->class;
         $relations = [];
 
-        foreach (
-            $this->reflector->getMethods(\ReflectionMethod::IS_PUBLIC) as $method
-        ) {
+        foreach ($this->reflector->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             $name = $method->getName();
             $returnType = $method->getReturnType();
 
             if (
                 $method->isStatic()
                 || $method->getNumberOfParameters() !== 0
-                || ! $returnType instanceof \ReflectionNamedType
-                || ! is_a($returnType->getName(), Relation::class, true)
+                || !$returnType instanceof \ReflectionNamedType
+                || !is_a($returnType->getName(), Relation::class, true)
                 || in_array($name, $model->getHidden(), true)
                 || in_array($name, ['column', 'order'], true)
             ) {
                 continue;
             }
 
-            try {
-                $relation = Relation::noConstraints(
-                    fn () => $method->invoke($model)
-                );
-            } catch (\Throwable) {
-                continue;
-            }
+            $relation = Relation::noConstraints(fn() => $method->invoke($model));
 
-            if (! $relation instanceof Relation || $relation instanceof MorphTo) {
+            if (!$relation instanceof Relation || $relation instanceof MorphTo) {
                 continue;
             }
 
@@ -128,34 +121,24 @@ class QueryCollection implements Operation
                 ->getSchemaBuilder()
                 ->getColumnListing($related->getTable());
 
-            $columns = array_values(
-                array_diff($columns, $related->getHidden())
-            );
+            $columns = array_values(array_diff($columns, $related->getHidden()));
 
             $relationName = json_encode($name, JSON_THROW_ON_ERROR);
+            $fieldName = 'orderBy' . Str::studly($name);
 
             if ($columns === []) {
-                $relations[] = "{ relation: {$relationName} }";
-
+                $relations[] = "$fieldName: _ @orderBy(relations: [{ relation: $relationName }])";
                 continue;
             }
 
             $columnNames = json_encode($columns, JSON_THROW_ON_ERROR);
-
-            $relations[] = <<<GRAPHQL
-            {
-                relation: {$relationName}
-                columns: {$columnNames}
-            }
-            GRAPHQL;
+            $relations[] = "$fieldName: _ @orderBy(relations: [{ relation: $relationName, columns: $columnNames }])";
         }
 
         if ($relations === []) {
             return 'orderBy: _ @orderBy';
         }
 
-        $definitions = implode(', ', $relations);
-
-        return "orderBy: _ @orderBy(relations: [{$definitions}])";
+        return implode(" \n ", array_merge(['orderBy: _ @orderBy'], $relations));
     }
 }
